@@ -77,12 +77,6 @@ display:none;
 .backBtn{
 background:#555;
 }
-
-.loading{
-margin-top:10px;
-text-align:center;
-display:none;
-}
 </style>
 
 </head>
@@ -108,11 +102,11 @@ display:none;
 
 <textarea id="description" placeholder="Product Description"></textarea>
 
-<input type="file" id="imageFile" accept="image/*" onchange="previewImage()">
+<!-- 🔥 IMAGE URL INPUT -->
+<input type="text" id="imageUrl" placeholder="Paste Image URL (ImgBB / Google Drive / any link)">
 
+<!-- Preview -->
 <img id="preview" class="preview">
-
-<div id="loading" class="loading">Uploading Image...</div>
 
 <button onclick="saveProduct()">Save Product</button>
 
@@ -128,9 +122,6 @@ const SELLER_API =
 
 const PRODUCT_API =
 "https://script.google.com/macros/s/AKfycbylZu-Ps1qeqrqo3cvhYIna1MC_uVA9RPNxPcpl6-1YupVrGvfb_WvD-Oq8NuHF-rGh/exec";
-
-const IMGBB_API_KEY =
-"ed1de9bdaa660d84c2f47a43795c4236";
 
 const sellerToken = localStorage.getItem("sellerToken");
 
@@ -148,104 +139,57 @@ currentSeller = sellers.find(s => s.token === sellerToken);
 
 if(!currentSeller){
 alert("Seller not found");
-localStorage.removeItem("sellerToken");
 window.location = "index.html";
 }
 }
 loadSeller();
 
-function previewImage(){
-const file = document.getElementById("imageFile").files[0];
-if(!file) return;
-
-const reader = new FileReader();
-reader.onload = e => {
-document.getElementById("preview").src = e.target.result;
-document.getElementById("preview").style.display = "block";
-};
-reader.readAsDataURL(file);
-}
-
-async function uploadImage(file){
-
-document.getElementById("loading").style.display = "block";
-
-const formData = new FormData();
-formData.append("image", file);
-
-const res = await fetch(
-"https://api.imgbb.com/1/upload?key=" + IMGBB_API_KEY,
-{
-method:"POST",
-body:formData
-}
-);
-
-const data = await res.json();
-
-document.getElementById("loading").style.display = "none";
-
-if(!data || !data.data){
-alert("Image upload failed");
-return null;
-}
-
-return data.data.url;
-}
-
-async function saveProduct(){
-
-try{
+function saveProduct(){
 
 const title = document.getElementById("title").value;
 const price = document.getElementById("price").value;
 const category = document.getElementById("category").value;
 const description = document.getElementById("description").value;
-const file = document.getElementById("imageFile").files[0];
+const imageUrl = document.getElementById("imageUrl").value;
 
-if(!title || !price || !category || !description || !file){
+if(!title || !price || !category || !description || !imageUrl){
 alert("Fill all fields");
 return;
 }
 
-const imageUrl = await uploadImage(file);
-
-if(!imageUrl){
-alert("Image upload failed");
-return;
-}
+// preview image
+document.getElementById("preview").src = imageUrl;
+document.getElementById("preview").style.display = "block";
 
 const product = {
 action:"addProduct",
 productId:"PRODUCT_" + Date.now(),
 sellerCode: currentSeller.sellerCode,
 shopName: currentSeller.shopName,
-title,
-price,
-category,
-description,
+title:title,
+price:price,
+category:category,
+description:description,
 image:imageUrl
 };
 
-const res = await fetch(PRODUCT_API,{
+fetch(PRODUCT_API,{
 method:"POST",
 headers:{
 "Content-Type":"application/json"
 },
 body:JSON.stringify(product)
-});
-
-const result = await res.text();
-console.log(result);
-
+})
+.then(res => res.text())
+.then(data => {
+console.log(data);
 alert("Product Added Successfully");
-
 window.location="my-products.html";
-
-}catch(err){
+})
+.catch(err=>{
 console.log(err);
-alert("Error: " + err.message);
-}
+alert("Failed to save product");
+});
 
 }
 
