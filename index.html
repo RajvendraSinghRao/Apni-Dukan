@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -70,4 +69,384 @@ display:none;
 display:block;
 }
 
+input{
+width:100%;
+padding:12px;
+margin-top:10px;
+border-radius:8px;
+border:1px solid #ccc;
+}
+
+button.submit{
+width:100%;
+padding:12px;
+margin-top:15px;
+border:none;
+border-radius:8px;
+background:#007bff;
+color:white;
+font-weight:bold;
+cursor:pointer;
+}
+
+.note{
+margin-top:12px;
+text-align:center;
+font-size:14px;
+}
+
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<div class="box">
+
+<h1>Marketplace</h1>
+
+<div class="tabs">
+
+<button id="userTab" class="active" onclick="showForm('userLogin')">
+User Login
+</button>
+
+<button id="sellerTab" onclick="showForm('sellerLogin')">
+Seller Login
+</button>
+
+</div>
+
+
+
+<!-- USER LOGIN -->
+
+<div id="userLogin" class="form active">
+
+<input type="text" id="userUsername" placeholder="Username">
+
+<input type="password" id="userPassword" placeholder="Password">
+
+<button class="submit" onclick="userLogin()">
+User Login
+</button>
+
+<div class="note">
+<a href="#" onclick="showForm('userSignup')">
+Create User Account
+</a>
+</div>
+
+</div>
+
+
+
+<!-- USER SIGNUP -->
+
+<div id="userSignup" class="form">
+
+<input type="text" id="newUserName" placeholder="Full Name">
+
+<input type="text" id="newUserUsername" placeholder="Username">
+
+<input type="password" id="newUserPassword" placeholder="Password">
+
+<button class="submit" onclick="createUser()">
+Create User
+</button>
+
+<div class="note">
+<a href="#" onclick="showForm('userLogin')">
+Back To Login
+</a>
+</div>
+
+</div>
+
+
+
+<!-- SELLER LOGIN -->
+
+<div id="sellerLogin" class="form">
+
+<input type="text" id="sellerUsername" placeholder="Seller Username">
+
+<input type="password" id="sellerPassword" placeholder="Seller Password">
+
+<button class="submit" onclick="sellerLogin()">
+Seller Login
+</button>
+
+<div class="note">
+<a href="#" onclick="showForm('sellerSignup')">
+Create Seller Account
+</a>
+</div>
+
+</div>
+
+
+
+<!-- SELLER SIGNUP -->
+
+<div id="sellerSignup" class="form">
+
+<input type="text" id="shopName" placeholder="Shop Name">
+
+<input type="text" id="newSellerUsername" placeholder="Seller Username">
+
+<input type="password" id="newSellerPassword" placeholder="Seller Password">
+
+<button class="submit" onclick="createSeller()">
+Create Seller
+</button>
+
+<div class="note">
+<a href="#" onclick="showForm('sellerLogin')">
+Back To Login
+</a>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+
+
+// =====================================
+// DIFFERENT APPS SCRIPT URLS
+// =====================================
+
+const USER_API =
+"PASTE_USER_APPS_SCRIPT_URL";
+
+const SELLER_API =
+"https://script.google.com/macros/s/AKfycbwDYlOmBvYI3uw6Wqk7pNJdvxvLpJH0xe8JGY1XSRz1yd_e5GYuO5lGIBRJaU4mFChz/exec";
+
+
+
+// =====================================
+// AUTO LOGIN
+// =====================================
+
+window.onload = ()=>{
+
+const userToken =
+localStorage.getItem("userToken");
+
+const sellerToken =
+localStorage.getItem("sellerToken");
+
+if(userToken){
+window.location = "home.html";
+}
+
+if(sellerToken){
+window.location = "seller.html";
+}
+
+};
+
+
+
+// =====================================
+// SHOW FORMS
+// =====================================
+
+function showForm(id){
+
+const forms = document.querySelectorAll('.form');
+
+forms.forEach(form=>{
+form.classList.remove('active');
+});
+
+document.getElementById(id)
+.classList.add('active');
+
+
+
+// TABS
+
+if(id.includes('user')){
+
+userTab.classList.add('active');
+sellerTab.classList.remove('active');
+
+}else{
+
+sellerTab.classList.add('active');
+userTab.classList.remove('active');
+
+}
+
+}
+
+
+
+// =====================================
+// CREATE USER
+// =====================================
+
+async function createUser(){
+
+const data = {
+
+action:"createUser",
+
+userCode:"USER_" + Date.now(),
+
+token:"UTOKEN_" + Date.now(),
+
+name:document.getElementById("newUserName").value,
+
+username:document.getElementById("newUserUsername").value,
+
+password:document.getElementById("newUserPassword").value
+
+};
+
+await fetch(USER_API,{
+method:"POST",
+body:JSON.stringify(data)
+});
+
+localStorage.setItem(
+"userToken",
+data.token
+);
+
+alert("User Created");
+
+window.location = "home.html";
+
+}
+
+
+
+// =====================================
+// USER LOGIN
+// =====================================
+
+async function userLogin(){
+
+const response = await fetch(
+USER_API + '?action=getUsers'
+);
+
+const users = await response.json();
+
+const user = users.find(u=>
+
+u.username ===
+document.getElementById("userUsername").value
+
+&&
+
+u.password ===
+document.getElementById("userPassword").value
+
+);
+
+if(!user){
+alert("Invalid Login");
+return;
+}
+
+localStorage.setItem(
+"userToken",
+user.token
+);
+
+window.location = "home.html";
+
+}
+
+
+
+// =====================================
+// CREATE SELLER
+// =====================================
+
+async function createSeller(){
+
+const data = {
+
+action:"createSeller",
+
+sellerCode:"SELLER_" + Date.now(),
+
+token:"SELLERTOKEN_" + Date.now(),
+
+shopName:document.getElementById("shopName").value,
+
+username:document.getElementById("newSellerUsername").value,
+
+password:document.getElementById("newSellerPassword").value
+
+};
+
+await fetch(SELLER_API,{
+method:"POST",
+body:JSON.stringify(data)
+});
+
+localStorage.setItem(
+"sellerToken",
+data.token
+);
+
+alert("Seller Created");
+
+window.location = "seller.html";
+
+}
+
+
+
+// =====================================
+// SELLER LOGIN
+// =====================================
+
+async function sellerLogin(){
+
+const response = await fetch(
+SELLER_API + '?action=getSellers'
+);
+
+const sellers = await response.json();
+
+const seller = sellers.find(s=>
+
+s.username ===
+document.getElementById("sellerUsername").value
+
+&&
+
+s.password ===
+document.getElementById("sellerPassword").value
+
+);
+
+if(!seller){
+alert("Invalid Login");
+return;
+}
+
+localStorage.setItem(
+"sellerToken",
+seller.token
+);
+
+window.location = "seller.html";
+
+}
+
+</script>
+
+</body>
 </html>
