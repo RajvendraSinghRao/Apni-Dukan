@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>Seller Orders</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
+body{
+background:#f2f2f2;
+}
+
+header{
+background:#007bff;
+color:white;
+padding:15px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+
+.backBtn{
+background:white;
+color:#007bff;
+padding:10px 15px;
+border:none;
+border-radius:8px;
+font-weight:bold;
+cursor:pointer;
+}
+
+.container{
+max-width:1300px;
+margin:auto;
+padding:20px;
+}
+
+.order-card{
+background:white;
+padding:15px;
+border-radius:12px;
+margin-bottom:20px;
+display:flex;
+gap:15px;
+align-items:center;
+box-shadow:0 0 10px rgba(0,0,0,0.1);
+flex-wrap:wrap;
+}
+
+.order-card img{
+width:130px;
+height:130px;
+object-fit:cover;
+border-radius:10px;
+}
+
+.info{
+flex:1;
+}
+
+.info h3{
+margin-bottom:10px;
+}
+
+.price{
+font-size:22px;
+font-weight:bold;
+color:green;
+margin-bottom:10px;
+}
+
+.status{
+font-size:18px;
+font-weight:bold;
+margin-top:10px;
+}
+
+.placed{
+color:green;
+}
+
+.cancelled{
+color:red;
+}
+
+.actionBtns{
+display:flex;
+flex-direction:column;
+gap:10px;
+}
+
+.actionBtns button{
+padding:12px 15px;
+border:none;
+border-radius:8px;
+font-weight:bold;
+cursor:pointer;
+color:white;
+}
+
+.confirmBtn{
+background:green;
+}
+
+.cancelBtn{
+background:red;
+}
+
+.empty{
+text-align:center;
+padding:60px;
+font-size:25px;
+color:#666;
+}
+
+</style>
+</head>
+<body>
+
+<header>
+
+<h2>Seller Orders</h2>
+
+<button
+class="backBtn"
+onclick="
+window.location='seller.html'
+">
+Back
+</button>
+
+</header>
+
+
+
+<div class="container">
+
+<div id="orders"></div>
+
+</div>
+
+<script>
+
+// =====================================
+// APIs
+// =====================================
+
+const SELLER_API =
+"PASTE_SELLER_API";
+
+const ORDER_API =
+"PASTE_ORDER_API";
+
+
+
+// =====================================
+// CHECK LOGIN
+// =====================================
+
+const sellerToken =
+localStorage.getItem(
+"sellerToken"
+);
+
+if(!sellerToken){
+
+window.location =
+"index.html";
+
+}
+
+
+
+// =====================================
+// CURRENT SELLER
+// =====================================
+
+let currentSeller = null;
+
+
+
+// =====================================
+// LOAD SELLER
+// =====================================
+
+async function loadSeller(){
+
+const response =
+await fetch(
+SELLER_API + "?action=getSellers"
+);
+
+const sellers =
+await response.json();
+
+const seller =
+sellers.find(s=>
+
+s.token === sellerToken
+
+);
+
+if(!seller){
+
+localStorage.removeItem(
+"sellerToken"
+);
+
+window.location =
+"index.html";
+
+return;
+
+}
+
+currentSeller = seller;
+
+loadOrders();
+
+}
+
+loadSeller();
+
+
+
+// =====================================
+// LOAD ORDERS
+// =====================================
+
+async function loadOrders(){
+
+const response =
+await fetch(
+ORDER_API + "?action=getOrders"
+);
+
+const orders =
+await response.json();
+
+const myOrders =
+orders.filter(order=>
+
+order.sellerCode ===
+currentSeller.sellerCode
+
+);
+
+showOrders(myOrders);
+
+}
+
+
+
+// =====================================
+// SHOW ORDERS
+// =====================================
+
+function showOrders(orders){
+
+const container =
+document.getElementById(
+"orders"
+);
+
+if(orders.length === 0){
+
+container.innerHTML =
+
+'<div class="empty">No Orders Found</div>';
+
+return;
+
+}
+
+container.innerHTML = "";
+
+orders.reverse().forEach(order=>{
+
+container.innerHTML += `
+
+<div class="order-card">
+
+<img src="${order.image}">
+
+<div class="info">
+
+<h3>${order.productTitle}</h3>
+
+<div class="price">
+₹ ${order.price}
+</div>
+
+<p>
+<b>Customer:</b>
+${order.customerName}
+</p>
+
+<p>
+<b>Phone:</b>
+${order.phone}
+</p>
+
+<p>
+<b>Address:</b>
+${order.address}
+</p>
+
+<div class="status
+${order.status === 'Cancelled'
+? 'cancelled'
+: 'placed'}">
+
+${order.status}
+
+</div>
+
+</div>
+
+<div class="actionBtns">
+
+${
+order.status !== "Confirmed"
+
+?
+
+`
+
+<button
+class="confirmBtn"
+onclick="
+confirmOrder(
+'${order.orderId}'
+)
+">
+Confirm
+</button>
+
+`
+
+:
+
+""
+
+}
+
+${
+order.status !== "Cancelled"
+
+?
+
+`
+
+<button
+class="cancelBtn"
+onclick="
+cancelOrder(
+'${order.orderId}'
+)
+">
+Cancel
+</button>
+
+`
+
+:
+
+""
+
+}
+
+</div>
+
+</div>
+
+`;
+
+});
+
+}
+
+
+
+// =====================================
+// CONFIRM ORDER
+// =====================================
+
+async function confirmOrder(orderId){
+
+await fetch(ORDER_API,{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({
+
+action:"confirmOrder",
+
+orderId:orderId
+
+})
+
+});
+
+
+
+alert("Order Confirmed");
+
+loadOrders();
+
+}
+
+
+
+// =====================================
+// CANCEL ORDER
+// =====================================
+
+async function cancelOrder(orderId){
+
+await fetch(ORDER_API,{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({
+
+action:"cancelOrder",
+
+orderId:orderId
+
+})
+
+});
+
+
+
+alert("Order Cancelled");
+
+loadOrders();
+
+}
+
+</script>
+
+</body>
+</html>
