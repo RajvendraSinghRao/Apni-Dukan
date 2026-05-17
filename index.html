@@ -334,27 +334,55 @@ window.location = "home.html";
 
 async function userLogin(){
 
+try{
+
+const username =
+document
+.getElementById("userUsername")
+.value
+.trim()
+.toLowerCase();
+
+const password =
+document
+.getElementById("userPassword")
+.value
+.trim();
+
 const response = await fetch(
 USER_API + '?action=getUsers'
 );
 
 const users = await response.json();
 
-const user = users.find(u=>
+console.log(users);
 
-u.username ===
-document.getElementById("userUsername").value
+const user = users.find(u =>
+
+String(u.username)
+.trim()
+.toLowerCase()
+
+===
+
+username
 
 &&
 
-u.password ===
-document.getElementById("userPassword").value
+String(u.password)
+.trim()
+
+===
+
+password
 
 );
 
 if(!user){
+
 alert("Invalid Login");
 return;
+
 }
 
 localStorage.setItem(
@@ -362,9 +390,20 @@ localStorage.setItem(
 user.token
 );
 
+alert("User Login Success");
+
 window.location = "home.html";
 
+}catch(error){
+
+console.log(error);
+
+alert(error.message);
+
 }
+
+}
+
 
 
 
@@ -414,27 +453,55 @@ window.location = "seller.html";
 
 async function sellerLogin(){
 
+try{
+
+const username =
+document
+.getElementById("sellerUsername")
+.value
+.trim()
+.toLowerCase();
+
+const password =
+document
+.getElementById("sellerPassword")
+.value
+.trim();
+
 const response = await fetch(
 SELLER_API + '?action=getSellers'
 );
 
 const sellers = await response.json();
 
-const seller = sellers.find(s=>
+console.log(sellers);
 
-s.username ===
-document.getElementById("sellerUsername").value
+const seller = sellers.find(s =>
+
+String(s.username)
+.trim()
+.toLowerCase()
+
+===
+
+username
 
 &&
 
-s.password ===
-document.getElementById("sellerPassword").value
+String(s.password)
+.trim()
+
+===
+
+password
 
 );
 
 if(!seller){
+
 alert("Invalid Login");
 return;
+
 }
 
 localStorage.setItem(
@@ -442,7 +509,17 @@ localStorage.setItem(
 seller.token
 );
 
+alert("Seller Login Success");
+
 window.location = "seller.html";
+
+}catch(error){
+
+console.log(error);
+
+alert(error.message);
+
+}
 
 }
 
