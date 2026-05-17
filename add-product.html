@@ -80,6 +80,7 @@ background:#555;
 </style>
 
 </head>
+
 <body>
 
 <div class="container">
@@ -102,10 +103,8 @@ background:#555;
 
 <textarea id="description" placeholder="Product Description"></textarea>
 
-<!-- 🔥 IMAGE URL INPUT -->
-<input type="text" id="imageUrl" placeholder="Paste Image URL (ImgBB / Google Drive / any link)">
+<input type="text" id="imageUrl" placeholder="Paste Image URL (ImgBB or direct link)">
 
-<!-- Preview -->
 <img id="preview" class="preview">
 
 <button onclick="saveProduct()">Save Product</button>
@@ -123,6 +122,7 @@ const SELLER_API =
 const PRODUCT_API =
 "https://script.google.com/macros/s/AKfycbylZu-Ps1qeqrqo3cvhYIna1MC_uVA9RPNxPcpl6-1YupVrGvfb_WvD-Oq8NuHF-rGh/exec";
 
+// LOGIN CHECK
 const sellerToken = localStorage.getItem("sellerToken");
 
 if(!sellerToken){
@@ -131,7 +131,11 @@ window.location = "index.html";
 
 let currentSeller = null;
 
+// LOAD SELLER
 async function loadSeller(){
+
+try{
+
 const res = await fetch(SELLER_API + "?action=getSellers");
 const sellers = await res.json();
 
@@ -139,11 +143,19 @@ currentSeller = sellers.find(s => s.token === sellerToken);
 
 if(!currentSeller){
 alert("Seller not found");
+localStorage.removeItem("sellerToken");
 window.location = "index.html";
 }
+
+}catch(err){
+console.log(err);
+alert("Failed to load seller");
+}
+
 }
 loadSeller();
 
+// SAVE PRODUCT
 function saveProduct(){
 
 const title = document.getElementById("title").value;
@@ -160,6 +172,11 @@ return;
 // preview image
 document.getElementById("preview").src = imageUrl;
 document.getElementById("preview").style.display = "block";
+
+if(!currentSeller){
+alert("Seller not loaded yet");
+return;
+}
 
 const product = {
 action:"addProduct",
@@ -180,21 +197,32 @@ headers:{
 },
 body:JSON.stringify(product)
 })
-.then(res => res.json())
+.then(res => res.text())
 .then(data => {
+
 console.log("SERVER RESPONSE:", data);
 
-if(data.success){
+try{
+
+const json = JSON.parse(data);
+
+if(json.success){
 alert("Product Added Successfully");
 window.location="my-products.html";
 }else{
-alert("Failed to save product");
+alert("Failed to save product: " + data);
 }
+
+}catch(e){
+alert("Server Error: " + data);
+}
+
 })
 .catch(err=>{
 console.log(err);
 alert("Network Error: Failed to save product");
 });
+
 }
 
 </script>
