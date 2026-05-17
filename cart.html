@@ -1,1 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
 
+<title>My Cart</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
+body{
+background:#f2f2f2;
+}
+
+header{
+background:#007bff;
+color:white;
+padding:15px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+
+.backBtn{
+background:white;
+color:#007bff;
+padding:10px 15px;
+border:none;
+border-radius:8px;
+font-weight:bold;
+cursor:pointer;
+}
+
+.container{
+max-width:1200px;
+margin:auto;
+padding:20px;
+}
+
+.cart-item{
+background:white;
+padding:15px;
+border-radius:12px;
+margin-bottom:20px;
+display:flex;
+gap:15px;
+align-items:center;
+box-shadow:0 0 10px rgba(0,0,0,0.1);
+flex-wrap:wrap;
+}
+
+.cart-item img{
+width:120px;
+height:120px;
+object-fit:cover;
+border-radius:10px;
+}
+
+.info{
+flex:1;
+}
+
+.info h3{
+margin-bottom:10px;
+}
+
+.price{
+color:green;
+font-size:22px;
+font-weight:bold;
+margin-bottom:10px;
+}
+
+.removeBtn{
+padding:10px 15px;
+border:none;
+border-radius:8px;
+background:red;
+color:white;
+font-weight:bold;
+cursor:pointer;
+}
+
+.checkout{
+background:white;
+padding:20px;
+border-radius:12px;
+box-shadow:0 0 10px rgba(0,0,0,0.1);
+margin-top:20px;
+}
+
+.checkout h2{
+margin-bottom:15px;
+}
+
+.checkout input,
+.checkout textarea{
+width:100%;
+padding:12px;
+margin-top:10px;
+border-radius:8px;
+border:1px solid #ccc;
+}
+
+.checkout textarea{
+height:100px;
+resize:none;
+}
+
+.orderBtn{
+width:100%;
+padding:14px;
+margin-top:15px;
+border:none;
+border-radius:8px;
+background:green;
+color:white;
+font-size:16px;
+font-weight:bold;
+cursor:pointer;
+}
+
+.empty{
+text-align:center;
+padding:60px;
+font-size:25px;
+color:#666;
+}
+
+.total{
+font-size:28px;
+font-weight:bold;
+color:#007bff;
+margin-top:15px;
+}
+
+</style>
+</head>
+<body>
+
+<header>
+
+<h2>My Cart</h2>
+
+<button
+class="backBtn"
+onclick="
+window.location='home.html'
+">
+Back
+</button>
+
+</header>
+
+
+
+<div class="container">
+
+<div id="cartItems"></div>
+
+<div
+class="checkout"
+id="checkoutBox"
+style="display:none">
+
+<h2>Checkout</h2>
+
+<input
+type="text"
+id="customerName"
+placeholder="Full Name"
+>
+
+<input
+type="text"
+id="customerPhone"
+placeholder="Phone Number"
+>
+
+<textarea
+id="customerAddress"
+placeholder="Full Address"
+></textarea>
+
+<div
+class="total"
+id="totalPrice">
+</div>
+
+<button
+class="orderBtn"
+onclick="placeOrder()">
+Place Order
+</button>
+
+</div>
+
+</div>
+
+<script>
+
+// =====================================
+// APIs
+// =====================================
+
+const USER_API =
+"PASTE_USER_API";
+
+const ORDER_API =
+"PASTE_ORDER_API";
+
+
+
+// =====================================
+// CHECK LOGIN
+// =====================================
+
+const userToken =
+localStorage.getItem(
+"userToken"
+);
+
+if(!userToken){
+
+window.location =
+"index.html";
+
+}
+
+
+
+// =====================================
+// CURRENT USER
+// =====================================
+
+let currentUser = null;
+
+let cart = [];
+
+
+
+// =====================================
+// LOAD USER
+// =====================================
+
+async function loadUser(){
+
+const response =
+await fetch(
+USER_API + "?action=getUsers"
+);
+
+const users =
+await response.json();
+
+const user =
+users.find(u=>
+
+u.token === userToken
+
+);
+
+if(!user){
+
+localStorage.removeItem(
+"userToken"
+);
+
+window.location =
+"index.html";
+
+return;
+
+}
+
+currentUser = user;
+
+loadCart();
+
+}
+
+loadUser();
+
+
+
+// =====================================
+// LOAD CART
+// =====================================
+
+function loadCart(){
+
+cart =
+JSON.parse(
+localStorage.getItem("cart")
+) || [];
+
+const buyNow =
+localStorage.getItem(
+"buyNowProduct"
+);
+
+if(buyNow){
+
+cart = [
+JSON.parse(buyNow)
+];
+
+localStorage.removeItem(
+"buyNowProduct"
+);
+
+}
+
+showCart();
+
+}
+
+
+
+// =====================================
+// SHOW CART
+// =====================================
+
+function showCart(){
+
+const container =
+document.getElementById(
+"cartItems"
+);
+
+const checkoutBox =
+document.getElementById(
+"checkoutBox"
+);
+
+if(cart.length === 0){
+
+container.innerHTML =
+
+'<div class="empty">Cart Is Empty</div>';
+
+checkoutBox.style.display =
+"none";
+
+return;
+
+}
+
+checkoutBox.style.display =
+"block";
+
+container.innerHTML = "";
+
+let total = 0;
+
+cart.forEach((product,index)=>{
+
+total += Number(product.price);
+
+container.innerHTML += `
+
+<div class="cart-item">
+
+<img src="${product.image}">
+
+<div class="info">
+
+<h3>${product.title}</h3>
+
+<div class="price">
+₹ ${product.price}
+</div>
+
+<p>${product.description}</p>
+
+</div>
+
+<button
+class="removeBtn"
+onclick="
+removeItem(${index})
+">
+Remove
+</button>
+
+</div>
+
+`;
+
+});
+
+document
+.getElementById("totalPrice")
+.innerText =
+
+"Total: ₹ " + total;
+
+}
+
+
+
+// =====================================
+// REMOVE ITEM
+// =====================================
+
+function removeItem(index){
+
+cart.splice(index,1);
+
+localStorage.setItem(
+"cart",
+JSON.stringify(cart)
+);
+
+showCart();
+
+}
+
+
+
+// =====================================
+// PLACE ORDER
+// =====================================
+
+async function placeOrder(){
+
+const name =
+document
+.getElementById("customerName")
+.value;
+
+const phone =
+document
+.getElementById("customerPhone")
+.value;
+
+const address =
+document
+.getElementById("customerAddress")
+.value;
+
+if(!name || !phone || !address){
+
+alert("Fill all fields");
+return;
+
+}
+
+
+
+for(const product of cart){
+
+await fetch(ORDER_API,{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({
+
+action:"placeOrder",
+
+orderId:
+"ORDER_" + Date.now(),
+
+sellerCode:
+product.sellerCode,
+
+userCode:
+currentUser.userCode,
+
+productId:
+product.productId,
+
+productTitle:
+product.title,
+
+price:
+product.price,
+
+image:
+product.image,
+
+customerName:name,
+
+phone:phone,
+
+address:address,
+
+status:"Placed"
+
+})
+
+});
+
+}
+
+
+
+localStorage.removeItem(
+"cart"
+);
+
+alert("Order Placed");
+
+window.location =
+"orders.html";
+
+}
+
+</script>
+
+</body>
+</html>
