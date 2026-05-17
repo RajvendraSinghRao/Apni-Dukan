@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>My Orders</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
+body{
+background:#f2f2f2;
+}
+
+header{
+background:#007bff;
+color:white;
+padding:15px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+
+.backBtn{
+background:white;
+color:#007bff;
+padding:10px 15px;
+border:none;
+border-radius:8px;
+font-weight:bold;
+cursor:pointer;
+}
+
+.container{
+max-width:1200px;
+margin:auto;
+padding:20px;
+}
+
+.order-card{
+background:white;
+padding:15px;
+border-radius:12px;
+margin-bottom:20px;
+display:flex;
+gap:15px;
+align-items:center;
+box-shadow:0 0 10px rgba(0,0,0,0.1);
+flex-wrap:wrap;
+}
+
+.order-card img{
+width:120px;
+height:120px;
+object-fit:cover;
+border-radius:10px;
+}
+
+.info{
+flex:1;
+}
+
+.info h3{
+margin-bottom:10px;
+}
+
+.price{
+font-size:22px;
+font-weight:bold;
+color:green;
+margin-bottom:10px;
+}
+
+.status{
+font-weight:bold;
+margin-top:10px;
+}
+
+.placed{
+color:green;
+}
+
+.cancelled{
+color:red;
+}
+
+.cancelBtn{
+padding:12px 15px;
+border:none;
+border-radius:8px;
+background:red;
+color:white;
+font-weight:bold;
+cursor:pointer;
+}
+
+.empty{
+text-align:center;
+padding:60px;
+font-size:25px;
+color:#666;
+}
+
+</style>
+</head>
+<body>
+
+<header>
+
+<h2>My Orders</h2>
+
+<button
+class="backBtn"
+onclick="
+window.location='home.html'
+">
+Back
+</button>
+
+</header>
+
+
+
+<div class="container">
+
+<div id="orders"></div>
+
+</div>
+
+<script>
+
+// =====================================
+// APIs
+// =====================================
+
+const USER_API =
+"PASTE_USER_API";
+
+const ORDER_API =
+"PASTE_ORDER_API";
+
+
+
+// =====================================
+// CHECK LOGIN
+// =====================================
+
+const userToken =
+localStorage.getItem(
+"userToken"
+);
+
+if(!userToken){
+
+window.location =
+"index.html";
+
+}
+
+
+
+// =====================================
+// CURRENT USER
+// =====================================
+
+let currentUser = null;
+
+
+
+// =====================================
+// LOAD USER
+// =====================================
+
+async function loadUser(){
+
+const response =
+await fetch(
+USER_API + "?action=getUsers"
+);
+
+const users =
+await response.json();
+
+const user =
+users.find(u=>
+
+u.token === userToken
+
+);
+
+if(!user){
+
+localStorage.removeItem(
+"userToken"
+);
+
+window.location =
+"index.html";
+
+return;
+
+}
+
+currentUser = user;
+
+loadOrders();
+
+}
+
+loadUser();
+
+
+
+// =====================================
+// LOAD ORDERS
+// =====================================
+
+async function loadOrders(){
+
+const response =
+await fetch(
+ORDER_API + "?action=getOrders"
+);
+
+const orders =
+await response.json();
+
+const myOrders =
+orders.filter(order=>
+
+order.userCode ===
+currentUser.userCode
+
+);
+
+showOrders(myOrders);
+
+}
+
+
+
+// =====================================
+// SHOW ORDERS
+// =====================================
+
+function showOrders(orders){
+
+const container =
+document.getElementById(
+"orders"
+);
+
+if(orders.length === 0){
+
+container.innerHTML =
+
+'<div class="empty">No Orders Found</div>';
+
+return;
+
+}
+
+container.innerHTML = "";
+
+orders.reverse().forEach(order=>{
+
+container.innerHTML += `
+
+<div class="order-card">
+
+<img src="${order.image}">
+
+<div class="info">
+
+<h3>${order.productTitle}</h3>
+
+<div class="price">
+₹ ${order.price}
+</div>
+
+<p>
+<b>Name:</b>
+${order.customerName}
+</p>
+
+<p>
+<b>Phone:</b>
+${order.phone}
+</p>
+
+<p>
+<b>Address:</b>
+${order.address}
+</p>
+
+<div class="status
+${order.status === 'Cancelled'
+? 'cancelled'
+: 'placed'}">
+
+${order.status}
+
+</div>
+
+</div>
+
+${
+order.status !== "Cancelled"
+
+?
+
+`
+
+<button
+class="cancelBtn"
+onclick="
+cancelOrder(
+'${order.orderId}'
+)
+">
+Cancel
+</button>
+
+`
+
+:
+
+""
+
+}
+
+</div>
+
+`;
+
+});
+
+}
+
+
+
+// =====================================
+// CANCEL ORDER
+// =====================================
+
+async function cancelOrder(orderId){
+
+const ok =
+confirm(
+"Cancel Order?"
+);
+
+if(!ok) return;
+
+
+
+await fetch(ORDER_API,{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({
+
+action:"cancelOrder",
+
+orderId:orderId
+
+})
+
+});
+
+
+
+alert("Order Cancelled");
+
+loadOrders();
+
+}
+
+</script>
+
+</body>
+</html>
