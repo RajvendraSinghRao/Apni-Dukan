@@ -133,25 +133,18 @@ description:description,
 image:image
 };
 
+const form = new FormData();
+
+form.append("data", JSON.stringify(product));
+
 fetch(PRODUCT_API,{
 method:"POST",
-headers:{
-"Content-Type":"application/json"
-},
-body:JSON.stringify(product)
+body:form
 })
-.then(res=>res.json())
+.then(res => res.text())
 .then(data=>{
-if(data.success){
-alert("Product Saved");
-window.location="my-products.html";
-}else{
-alert("Failed");
-}
-})
-.catch(err=>{
-alert("Network Error");
-console.log(err);
+console.log(data);
+alert("Saved");
 });
 
 }
