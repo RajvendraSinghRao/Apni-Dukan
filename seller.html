@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>Seller Dashboard</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
+body{
+background:#f2f2f2;
+}
+
+header{
+background:#007bff;
+color:white;
+padding:15px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+flex-wrap:wrap;
+gap:10px;
+}
+
+header h2{
+font-size:22px;
+}
+
+.logout{
+background:red;
+color:white;
+padding:10px 15px;
+border:none;
+border-radius:8px;
+cursor:pointer;
+font-weight:bold;
+}
+
+.container{
+max-width:1200px;
+margin:auto;
+padding:20px;
+}
+
+.welcome{
+background:white;
+padding:20px;
+border-radius:12px;
+margin-bottom:20px;
+box-shadow:0 0 10px rgba(0,0,0,0.1);
+}
+
+.cards{
+display:grid;
+grid-template-columns:
+repeat(auto-fit,minmax(250px,1fr));
+gap:20px;
+}
+
+.card{
+background:white;
+padding:25px;
+border-radius:12px;
+box-shadow:0 0 10px rgba(0,0,0,0.1);
+text-align:center;
+}
+
+.card h3{
+margin-bottom:15px;
+font-size:22px;
+}
+
+.card button{
+padding:12px;
+width:100%;
+border:none;
+border-radius:8px;
+background:#007bff;
+color:white;
+font-weight:bold;
+cursor:pointer;
+font-size:15px;
+}
+
+.stats{
+margin-top:30px;
+display:grid;
+grid-template-columns:
+repeat(auto-fit,minmax(200px,1fr));
+gap:20px;
+}
+
+.stat-box{
+background:white;
+padding:25px;
+border-radius:12px;
+text-align:center;
+box-shadow:0 0 10px rgba(0,0,0,0.1);
+}
+
+.stat-box h1{
+font-size:40px;
+color:#007bff;
+margin-bottom:10px;
+}
+
+</style>
+</head>
+<body>
+
+<header>
+
+<h2>Seller Dashboard</h2>
+
+<button
+class="logout"
+onclick="logout()">
+Logout
+</button>
+
+</header>
+
+
+
+<div class="container">
+
+<div class="welcome">
+
+<h2 id="shopName">
+Loading...
+</h2>
+
+<p id="sellerCodeText">
+</p>
+
+</div>
+
+
+
+<div class="cards">
+
+<div class="card">
+
+<h3>Add Product</h3>
+
+<button
+onclick="
+window.location='add-product.html'
+">
+Open
+</button>
+
+</div>
+
+
+
+<div class="card">
+
+<h3>My Products</h3>
+
+<button
+onclick="
+window.location='my-products.html'
+">
+Open
+</button>
+
+</div>
+
+
+
+<div class="card">
+
+<h3>Orders</h3>
+
+<button
+onclick="
+window.location='seller-orders.html'
+">
+Open
+</button>
+
+</div>
+
+</div>
+
+
+
+<div class="stats">
+
+<div class="stat-box">
+
+<h1 id="totalProducts">
+0
+</h1>
+
+<p>Total Products</p>
+
+</div>
+
+
+
+<div class="stat-box">
+
+<h1 id="totalOrders">
+0
+</h1>
+
+<p>Total Orders</p>
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+// =====================================
+// APIs
+// =====================================
+
+const SELLER_API =
+"PASTE_SELLER_API";
+
+const PRODUCT_API =
+"PASTE_PRODUCT_API";
+
+const ORDER_API =
+"PASTE_ORDER_API";
+
+
+
+// =====================================
+// CHECK LOGIN
+// =====================================
+
+const sellerToken =
+localStorage.getItem(
+"sellerToken"
+);
+
+if(!sellerToken){
+
+window.location =
+"index.html";
+
+}
+
+
+
+// =====================================
+// LOAD SELLER
+// =====================================
+
+let currentSeller = null;
+
+async function loadSeller(){
+
+const response =
+await fetch(
+SELLER_API + "?action=getSellers"
+);
+
+const sellers =
+await response.json();
+
+const seller =
+sellers.find(s=>
+
+s.token === sellerToken
+
+);
+
+if(!seller){
+
+localStorage.removeItem(
+"sellerToken"
+);
+
+window.location =
+"index.html";
+
+return;
+
+}
+
+currentSeller = seller;
+
+document
+.getElementById("shopName")
+.innerText =
+
+"Welcome, " +
+seller.shopName;
+
+document
+.getElementById(
+"sellerCodeText"
+)
+.innerText =
+
+"Seller Code: " +
+seller.sellerCode;
+
+
+
+loadStats();
+
+}
+
+
+
+// =====================================
+// LOAD STATS
+// =====================================
+
+async function loadStats(){
+
+// PRODUCTS
+
+const pResponse =
+await fetch(
+PRODUCT_API + "?action=getProducts"
+);
+
+const products =
+await pResponse.json();
+
+const myProducts =
+products.filter(p=>
+
+p.sellerCode ===
+currentSeller.sellerCode
+
+);
+
+document
+.getElementById(
+"totalProducts"
+)
+.innerText =
+
+myProducts.length;
+
+
+
+// ORDERS
+
+const oResponse =
+await fetch(
+ORDER_API + "?action=getOrders"
+);
+
+const orders =
+await oResponse.json();
+
+const myOrders =
+orders.filter(o=>
+
+o.sellerCode ===
+currentSeller.sellerCode
+
+);
+
+document
+.getElementById(
+"totalOrders"
+)
+.innerText =
+
+myOrders.length;
+
+}
+
+
+
+// =====================================
+// LOGOUT
+// =====================================
+
+function logout(){
+
+localStorage.removeItem(
+"sellerToken"
+);
+
+window.location =
+"index.html";
+
+}
+
+
+
+// =====================================
+// START
+// =====================================
+
+loadSeller();
+
+</script>
+
+</body>
+</html>
