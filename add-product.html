@@ -11,7 +11,7 @@
 margin:0;
 padding:0;
 box-sizing:border-box;
-font-family:Arial,sans-serif;
+font-family:Arial;
 }
 
 body{
@@ -19,63 +19,31 @@ background:#f2f2f2;
 padding:20px;
 }
 
-.container{
-max-width:700px;
-margin:auto;
-}
-
 .box{
+max-width:600px;
+margin:auto;
 background:white;
-padding:25px;
-border-radius:15px;
-box-shadow:0 0 10px rgba(0,0,0,0.1);
-}
-
-h2{
-text-align:center;
-margin-bottom:20px;
+padding:20px;
+border-radius:10px;
 }
 
 input,textarea,select{
 width:100%;
-padding:12px;
-margin-top:12px;
-border-radius:8px;
+padding:10px;
+margin-top:10px;
 border:1px solid #ccc;
-font-size:15px;
-}
-
-textarea{
-resize:none;
-height:120px;
+border-radius:6px;
 }
 
 button{
 width:100%;
-padding:14px;
+padding:12px;
 margin-top:15px;
-border:none;
-border-radius:8px;
 background:#007bff;
 color:white;
-font-size:16px;
-font-weight:bold;
+border:none;
+border-radius:6px;
 cursor:pointer;
-}
-
-button:hover{
-background:#0056b3;
-}
-
-.preview{
-width:100%;
-margin-top:15px;
-border-radius:10px;
-display:none;
-}
-
-.backBtn{
-background:#555;
 }
 </style>
 
@@ -83,13 +51,12 @@ background:#555;
 
 <body>
 
-<div class="container">
 <div class="box">
 
 <h2>Add Product</h2>
 
-<input type="text" id="title" placeholder="Product Title">
-<input type="number" id="price" placeholder="Product Price">
+<input id="title" placeholder="Product Title">
+<input id="price" type="number" placeholder="Price">
 
 <select id="category">
 <option value="">Select Category</option>
@@ -101,93 +68,69 @@ background:#555;
 <option>Sports</option>
 </select>
 
-<textarea id="description" placeholder="Product Description"></textarea>
+<textarea id="description" placeholder="Description"></textarea>
 
-<input type="text" id="imageUrl" placeholder="Paste Image URL (ImgBB or direct link)">
-
-<img id="preview" class="preview">
+<input id="imageUrl" placeholder="Image URL">
 
 <button onclick="saveProduct()">Save Product</button>
 
-<button class="backBtn" onclick="window.location='seller.html'">Back</button>
-
-</div>
 </div>
 
 <script>
 
-const SELLER_API =
-"https://script.google.com/macros/s/AKfycbwDYlOmBvYI3uw6Wqk7pNJdvxvLpJH0xe8JGY1XSRz1yd_e5GYuO5lGIBRJaU4mFChz/exec";
-
 const PRODUCT_API =
 "https://script.google.com/macros/s/AKfycbylZu-Ps1qeqrqo3cvhYIna1MC_uVA9RPNxPcpl6-1YupVrGvfb_WvD-Oq8NuHF-rGh/exec";
 
-// LOGIN CHECK
+const SELLER_API =
+"https://script.google.com/macros/s/AKfycbwDYlOmBvYI3uw6Wqk7pNJdvxvLpJH0xe8JGY1XSRz1yd_e5GYuO5lGIBRJaU4mFChz/exec";
+
 const sellerToken = localStorage.getItem("sellerToken");
 
 if(!sellerToken){
 window.location = "index.html";
 }
 
-let currentSeller = null;
+let seller = null;
 
 // LOAD SELLER
 async function loadSeller(){
+let res = await fetch(SELLER_API+"?action=getSellers");
+let data = await res.json();
 
-try{
+seller = data.find(s => s.token === sellerToken);
 
-const res = await fetch(SELLER_API + "?action=getSellers");
-const sellers = await res.json();
-
-currentSeller = sellers.find(s => s.token === sellerToken);
-
-if(!currentSeller){
-alert("Seller not found");
-localStorage.removeItem("sellerToken");
+if(!seller){
+alert("Login again");
 window.location = "index.html";
 }
-
-}catch(err){
-console.log(err);
-alert("Failed to load seller");
 }
 
-}
 loadSeller();
 
 // SAVE PRODUCT
 function saveProduct(){
 
-const title = document.getElementById("title").value;
-const price = document.getElementById("price").value;
-const category = document.getElementById("category").value;
-const description = document.getElementById("description").value;
-const imageUrl = document.getElementById("imageUrl").value;
+let title = document.getElementById("title").value;
+let price = document.getElementById("price").value;
+let category = document.getElementById("category").value;
+let description = document.getElementById("description").value;
+let image = document.getElementById("imageUrl").value;
 
-if(!title || !price || !category || !description || !imageUrl){
+if(!title || !price || !category || !description || !image){
 alert("Fill all fields");
 return;
 }
 
-// preview image
-document.getElementById("preview").src = imageUrl;
-document.getElementById("preview").style.display = "block";
-
-if(!currentSeller){
-alert("Seller not loaded yet");
-return;
-}
-
-const product = {
+let product = {
 action:"addProduct",
-productId:"PRODUCT_" + Date.now(),
-sellerCode: currentSeller.sellerCode,
-shopName: currentSeller.shopName,
+productId:"P_"+Date.now(),
+sellerCode:seller.sellerCode,
+shopName:seller.shopName,
 title:title,
 price:price,
 category:category,
 description:description,
-image:imageUrl
+image:image
 };
 
 fetch(PRODUCT_API,{
@@ -197,30 +140,18 @@ headers:{
 },
 body:JSON.stringify(product)
 })
-.then(res => res.text())
-.then(data => {
-
-console.log("SERVER RESPONSE:", data);
-
-try{
-
-const json = JSON.parse(data);
-
-if(json.success){
-alert("Product Added Successfully");
+.then(res=>res.json())
+.then(data=>{
+if(data.success){
+alert("Product Saved");
 window.location="my-products.html";
 }else{
-alert("Failed to save product: " + data);
+alert("Failed");
 }
-
-}catch(e){
-alert("Server Error: " + data);
-}
-
 })
 .catch(err=>{
+alert("Network Error");
 console.log(err);
-alert("Network Error: Failed to save product");
 });
 
 }
