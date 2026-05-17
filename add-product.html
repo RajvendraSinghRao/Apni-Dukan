@@ -347,45 +347,70 @@ return data.data.url;
 
 async function saveProduct(){
 
-const title =
-document
-.getElementById("title")
-.value;
+try{
 
-const price =
-document
-.getElementById("price")
-.value;
+alert("FUNCTION STARTED"); // TEST
 
-const category =
-document
-.getElementById("category")
-.value;
+if(!currentSeller){
+alert("Seller not loaded");
+return;
+}
 
-const description =
-document
-.getElementById("description")
-.value;
+const title = document.getElementById("title").value;
+const price = document.getElementById("price").value;
+const category = document.getElementById("category").value;
+const description = document.getElementById("description").value;
+const file = document.getElementById("imageFile").files[0];
 
-const file =
-document
-.getElementById("imageFile")
-.files[0];
-
-if(
-!title ||
-!price ||
-!category ||
-!description ||
-!file
-){
-
+if(!title || !price || !category || !description || !file){
 alert("Fill all fields");
 return;
+}
+
+const imageUrl = await uploadImage(file);
+
+if(!imageUrl){
+alert("Image upload failed");
+return;
+}
+
+const product = {
+action:"addProduct",
+productId:"PRODUCT_" + Date.now(),
+sellerCode: currentSeller.sellerCode,
+shopName: currentSeller.shopName,
+title:title,
+price:price,
+category:category,
+description:description,
+image:imageUrl
+};
+
+console.log("SENDING PRODUCT:", product);
+
+const res = await fetch(PRODUCT_API,{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify(product)
+});
+
+const data = await res.text();
+console.log("RESPONSE:", data);
+
+alert("Product Added");
+
+window.location="my-products.html";
+
+}catch(err){
+
+console.log("ERROR:", err);
+alert(err.message);
 
 }
 
-
+}
 
 // UPLOAD IMAGE
 
