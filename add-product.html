@@ -25,6 +25,12 @@ margin:auto;
 background:white;
 padding:20px;
 border-radius:10px;
+box-shadow:0 0 10px rgba(0,0,0,0.1);
+}
+
+h2{
+text-align:center;
+margin-bottom:15px;
 }
 
 input,textarea,select{
@@ -44,6 +50,11 @@ color:white;
 border:none;
 border-radius:6px;
 cursor:pointer;
+font-size:16px;
+}
+
+button:hover{
+background:#0056b3;
 }
 </style>
 
@@ -94,7 +105,8 @@ let seller = null;
 
 // LOAD SELLER
 async function loadSeller(){
-let res = await fetch(SELLER_API+"?action=getSellers");
+try{
+let res = await fetch(SELLER_API + "?action=getSellers");
 let data = await res.json();
 
 seller = data.find(s => s.token === sellerToken);
@@ -102,6 +114,10 @@ seller = data.find(s => s.token === sellerToken);
 if(!seller){
 alert("Login again");
 window.location = "index.html";
+}
+}catch(err){
+alert("Seller load failed");
+console.log(err);
 }
 }
 
@@ -121,9 +137,14 @@ alert("Fill all fields");
 return;
 }
 
+if(!seller){
+alert("Seller not loaded");
+return;
+}
+
 let product = {
 action:"addProduct",
-productId:"P_"+Date.now(),
+productId:"P_" + Date.now(),
 sellerCode:seller.sellerCode,
 shopName:seller.shopName,
 title:title,
@@ -133,18 +154,29 @@ description:description,
 image:image
 };
 
-const form = new FormData();
-
-form.append("data", JSON.stringify(product));
-
 fetch(PRODUCT_API,{
 method:"POST",
-body:form
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify(product)
 })
-.then(res => res.text())
+.then(res => res.json())
 .then(data=>{
-console.log(data);
-alert("Saved");
+
+console.log("SERVER:",data);
+
+if(data.success){
+alert("Product Saved Successfully");
+window.location="my-products.html";
+}else{
+alert("Failed: " + JSON.stringify(data));
+}
+
+})
+.catch(err=>{
+console.log(err);
+alert("Network Error (check deployment)");
 });
 
 }
