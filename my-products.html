@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>My Products</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
+body{
+background:#f2f2f2;
+}
+
+header{
+background:#007bff;
+color:white;
+padding:15px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+
+header h2{
+font-size:22px;
+}
+
+.backBtn{
+background:white;
+color:#007bff;
+padding:10px 15px;
+border:none;
+border-radius:8px;
+font-weight:bold;
+cursor:pointer;
+}
+
+.container{
+padding:20px;
+max-width:1400px;
+margin:auto;
+}
+
+.products{
+display:grid;
+grid-template-columns:
+repeat(auto-fit,minmax(250px,1fr));
+gap:20px;
+}
+
+.card{
+background:white;
+border-radius:12px;
+overflow:hidden;
+box-shadow:0 0 10px rgba(0,0,0,0.1);
+}
+
+.card img{
+width:100%;
+height:220px;
+object-fit:cover;
+}
+
+.content{
+padding:15px;
+}
+
+.content h3{
+margin-bottom:10px;
+}
+
+.price{
+color:green;
+font-size:22px;
+font-weight:bold;
+margin-bottom:10px;
+}
+
+.desc{
+font-size:14px;
+color:#555;
+margin-bottom:15px;
+}
+
+.deleteBtn{
+width:100%;
+padding:12px;
+border:none;
+border-radius:8px;
+background:red;
+color:white;
+font-weight:bold;
+cursor:pointer;
+}
+
+.empty{
+text-align:center;
+padding:50px;
+font-size:22px;
+color:#666;
+}
+
+</style>
+</head>
+<body>
+
+<header>
+
+<h2>My Products</h2>
+
+<button
+class="backBtn"
+onclick="
+window.location='seller.html'
+">
+Back
+</button>
+
+</header>
+
+
+
+<div class="container">
+
+<div
+class="products"
+id="products">
+</div>
+
+</div>
+
+<script>
+
+// =====================================
+// APIs
+// =====================================
+
+const SELLER_API =
+"PASTE_SELLER_API";
+
+const PRODUCT_API =
+"PASTE_PRODUCT_API";
+
+
+
+// =====================================
+// CHECK LOGIN
+// =====================================
+
+const sellerToken =
+localStorage.getItem(
+"sellerToken"
+);
+
+if(!sellerToken){
+
+window.location =
+"index.html";
+
+}
+
+
+
+// =====================================
+// CURRENT SELLER
+// =====================================
+
+let currentSeller = null;
+
+
+
+// =====================================
+// LOAD SELLER
+// =====================================
+
+async function loadSeller(){
+
+const response =
+await fetch(
+SELLER_API + "?action=getSellers"
+);
+
+const sellers =
+await response.json();
+
+const seller =
+sellers.find(s=>
+
+s.token === sellerToken
+
+);
+
+if(!seller){
+
+localStorage.removeItem(
+"sellerToken"
+);
+
+window.location =
+"index.html";
+
+return;
+
+}
+
+currentSeller = seller;
+
+loadProducts();
+
+}
+
+loadSeller();
+
+
+
+// =====================================
+// LOAD PRODUCTS
+// =====================================
+
+async function loadProducts(){
+
+const response =
+await fetch(
+PRODUCT_API + "?action=getProducts"
+);
+
+const products =
+await response.json();
+
+const myProducts =
+products.filter(p=>
+
+p.sellerCode ===
+currentSeller.sellerCode
+
+);
+
+showProducts(myProducts);
+
+}
+
+
+
+// =====================================
+// SHOW PRODUCTS
+// =====================================
+
+function showProducts(products){
+
+const container =
+document.getElementById(
+"products"
+);
+
+if(products.length === 0){
+
+container.innerHTML =
+
+'<div class="empty">No Products Added</div>';
+
+return;
+
+}
+
+container.innerHTML = "";
+
+products.reverse().forEach(product=>{
+
+container.innerHTML += `
+
+<div class="card">
+
+<img src="${product.image}">
+
+<div class="content">
+
+<h3>${product.title}</h3>
+
+<div class="price">
+₹ ${product.price}
+</div>
+
+<div class="desc">
+${product.description}
+</div>
+
+<button
+class="deleteBtn"
+onclick="
+deleteProduct(
+'${product.productId}'
+)
+">
+Delete Product
+</button>
+
+</div>
+
+</div>
+
+`;
+
+});
+
+}
+
+
+
+// =====================================
+// DELETE PRODUCT
+// =====================================
+
+async function deleteProduct(productId){
+
+const ok =
+confirm(
+"Delete Product?"
+);
+
+if(!ok) return;
+
+
+
+await fetch(PRODUCT_API,{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({
+
+action:"deleteProduct",
+
+productId:productId
+
+})
+
+});
+
+
+
+alert("Deleted");
+
+loadProducts();
+
+}
+
+</script>
+
+</body>
+</html>
