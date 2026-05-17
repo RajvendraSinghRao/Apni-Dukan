@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>Marketplace Home</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
+body{
+background:#f2f2f2;
+}
+
+header{
+background:#007bff;
+color:white;
+padding:15px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+flex-wrap:wrap;
+gap:10px;
+}
+
+header h2{
+font-size:22px;
+}
+
+.header-buttons{
+display:flex;
+gap:10px;
+}
+
+.header-buttons button{
+padding:10px 15px;
+border:none;
+border-radius:8px;
+cursor:pointer;
+font-weight:bold;
+}
+
+.logout{
+background:red;
+color:white;
+}
+
+.ordersBtn{
+background:white;
+color:#007bff;
+}
+
+.container{
+padding:15px;
+max-width:1400px;
+margin:auto;
+}
+
+.search-box{
+margin-bottom:20px;
+}
+
+.search-box input{
+width:100%;
+padding:12px;
+border-radius:8px;
+border:1px solid #ccc;
+font-size:16px;
+}
+
+.products{
+display:grid;
+grid-template-columns:
+repeat(auto-fit,minmax(220px,1fr));
+gap:20px;
+}
+
+.card{
+background:white;
+border-radius:12px;
+overflow:hidden;
+box-shadow:0 0 10px rgba(0,0,0,0.1);
+display:flex;
+flex-direction:column;
+}
+
+.card img{
+width:100%;
+height:220px;
+object-fit:cover;
+background:#ddd;
+}
+
+.card-content{
+padding:15px;
+flex:1;
+display:flex;
+flex-direction:column;
+}
+
+.card h3{
+font-size:18px;
+margin-bottom:10px;
+}
+
+.price{
+color:green;
+font-size:20px;
+font-weight:bold;
+margin-bottom:10px;
+}
+
+.desc{
+font-size:14px;
+color:#555;
+margin-bottom:15px;
+flex:1;
+}
+
+.card button{
+padding:12px;
+border:none;
+border-radius:8px;
+cursor:pointer;
+font-weight:bold;
+margin-top:8px;
+}
+
+.cartBtn{
+background:#007bff;
+color:white;
+}
+
+.buyBtn{
+background:green;
+color:white;
+}
+
+.empty{
+text-align:center;
+padding:40px;
+font-size:20px;
+color:#777;
+}
+
+</style>
+</head>
+<body>
+
+<header>
+
+<h2>Marketplace</h2>
+
+<div class="header-buttons">
+
+<button
+class="ordersBtn"
+onclick="window.location='orders.html'">
+My Orders
+</button>
+
+<button
+class="ordersBtn"
+onclick="window.location='cart.html'">
+Cart
+</button>
+
+<button
+class="logout"
+onclick="logout()">
+Logout
+</button>
+
+</div>
+
+</header>
+
+
+
+<div class="container">
+
+<div class="search-box">
+
+<input
+type="text"
+id="searchInput"
+placeholder="Search products..."
+onkeyup="searchProducts()"
+>
+
+</div>
+
+<div
+class="products"
+id="products">
+</div>
+
+</div>
+
+<script>
+
+// =====================================
+// PRODUCTS API
+// =====================================
+
+const PRODUCT_API =
+"PASTE_PRODUCTS_APPS_SCRIPT_URL";
+
+
+
+// =====================================
+// CHECK LOGIN
+// =====================================
+
+const userToken =
+localStorage.getItem("userToken");
+
+if(!userToken){
+
+window.location =
+"index.html";
+
+}
+
+
+
+// =====================================
+// LOAD PRODUCTS
+// =====================================
+
+let allProducts = [];
+
+async function loadProducts(){
+
+const response =
+await fetch(
+PRODUCT_API + "?action=getProducts"
+);
+
+const products =
+await response.json();
+
+allProducts = products;
+
+showProducts(products);
+
+}
+
+
+
+// =====================================
+// SHOW PRODUCTS
+// =====================================
+
+function showProducts(products){
+
+const container =
+document.getElementById("products");
+
+if(products.length === 0){
+
+container.innerHTML =
+
+'<div class="empty">No Products Found</div>';
+
+return;
+
+}
+
+container.innerHTML = "";
+
+products.reverse().forEach(product=>{
+
+container.innerHTML += `
+
+<div class="card">
+
+<img src="${product.image}">
+
+<div class="card-content">
+
+<h3>${product.title}</h3>
+
+<div class="price">
+₹ ${product.price}
+</div>
+
+<div class="desc">
+${product.description}
+</div>
+
+<button
+class="cartBtn"
+onclick='addToCart(
+${JSON.stringify(product)}
+)'>
+Add To Cart
+</button>
+
+<button
+class="buyBtn"
+onclick='buyNow(
+${JSON.stringify(product)}
+)'>
+Buy Now
+</button>
+
+</div>
+
+</div>
+
+`;
+
+});
+
+}
+
+
+
+// =====================================
+// SEARCH
+// =====================================
+
+function searchProducts(){
+
+const value =
+document
+.getElementById("searchInput")
+.value
+.toLowerCase();
+
+const filtered =
+allProducts.filter(product=>
+
+product.title
+.toLowerCase()
+.includes(value)
+
+||
+
+product.category
+.toLowerCase()
+.includes(value)
+
+);
+
+showProducts(filtered);
+
+}
+
+
+
+// =====================================
+// ADD TO CART
+// =====================================
+
+function addToCart(product){
+
+let cart =
+JSON.parse(
+localStorage.getItem("cart")
+) || [];
+
+cart.push(product);
+
+localStorage.setItem(
+"cart",
+JSON.stringify(cart)
+);
+
+alert("Added To Cart");
+
+}
+
+
+
+// =====================================
+// BUY NOW
+// =====================================
+
+function buyNow(product){
+
+localStorage.setItem(
+"buyNowProduct",
+JSON.stringify(product)
+);
+
+window.location =
+"cart.html";
+
+}
+
+
+
+// =====================================
+// LOGOUT
+// =====================================
+
+function logout(){
+
+localStorage.removeItem(
+"userToken"
+);
+
+window.location =
+"index.html";
+
+}
+
+
+
+// =====================================
+// START
+// =====================================
+
+loadProducts();
+
+</script>
+
+</body>
+</html>
