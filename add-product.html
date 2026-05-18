@@ -1,203 +1,119 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Add Product</title>
-
-<style>
-body{
-font-family:Arial;
-background:#f2f2f2;
-padding:20px;
-}
-
-.box{
-max-width:600px;
-margin:auto;
-background:white;
-padding:20px;
-border-radius:10px;
-box-shadow:0 0 10px rgba(0,0,0,0.1);
-}
-
-h2{text-align:center;}
-
-input,textarea,select{
-width:100%;
-padding:10px;
-margin-top:10px;
-border:1px solid #ccc;
-border-radius:6px;
-}
-
-button{
-width:100%;
-padding:12px;
-margin-top:15px;
-background:#007bff;
-color:white;
-border:none;
-border-radius:6px;
-font-size:16px;
-cursor:pointer;
-}
-
-button:disabled{
-background:gray;
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Product</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;font-family:Arial;}
+    body{background:#f2f2f2;padding:20px;}
+    .box{max-width:600px;margin:auto;background:white;padding:20px;border-radius:10px;box-shadow:0 0 10px rgba(0,0,0,0.1);}
+    h2{text-align:center;margin-bottom:15px;}
+    input,textarea,select{width:100%;padding:10px;margin-top:10px;border:1px solid #ccc;border-radius:6px;}
+    button{width:100%;padding:12px;margin-top:15px;background:#007bff;color:white;border:none;border-radius:6px;cursor:pointer;font-size:16px;}
+    button:hover{background:#0056b3;}
+  </style>
 </head>
-
 <body>
-
-<div class="box">
-
-<h2>Add Product</h2>
-
-<input id="title" placeholder="Product Title">
-<input id="price" type="number" placeholder="Price">
-
-<select id="category">
-<option value="">Select Category</option>
-<option>Electronics</option>
-<option>Fashion</option>
-<option>Books</option>
-<option>Home</option>
-<option>Beauty</option>
-<option>Sports</option>
-</select>
-
-<textarea id="description" placeholder="Description"></textarea>
-
-<input id="imageUrl" placeholder="Image URL">
-
-<button id="saveBtn" onclick="saveProduct()" disabled>Save Product</button>
-
-</div>
+  <div class="box">
+    <h2>Add Product</h2>
+    <input id="title" placeholder="Product Title">
+    <input id="price" type="number" placeholder="Price">
+    <select id="category">
+      <option value="">Select Category</option>
+      <option>Electronics</option>
+      <option>Fashion</option>
+      <option>Books</option>
+      <option>Home</option>
+      <option>Beauty</option>
+      <option>Sports</option>
+    </select>
+    <textarea id="description" placeholder="Description"></textarea>
+    <input id="imageUrl" placeholder="Image URL">
+    <button onclick="saveProduct()">Save Product</button>
+  </div>
 
 <script>
-
-/* ================= YOUR API ================= */
-const PRODUCT_API =
-"https://script.google.com/macros/s/AKfycbxShR62soMxOhS6nhnxCQMT8dAzUoSVQF2NN-5HoZsxgzDmr8Ty4_VnfI1yCrPwWYz2/exec";
-
-const SELLER_API =
-"https://script.google.com/macros/s/AKfycbwDYlOmBvYI3uw6Wqk7pNJdvxvLpJH0xe8JGY1XSRz1yd_e5GYuO5lGIBRJaU4mFChz/exec";
-
+const PRODUCT_API = "https://script.google.com/macros/s/AKfycbxShR62soMxOhS6nhnxCQMT8dAzUoSVQF2NN-5HoZsxgzDmr8Ty4_VnfI1yCrPwWYz2/exec";
+const SELLER_API = "https://script.google.com/macros/s/AKfycbwDYlOmBvYI3uw6Wqk7pNJdvxvLpJH0xe8JGY1XSRz1yd_e5GYuO5lGIBRJaU4mFChz/exec";
 
 const sellerToken = localStorage.getItem("sellerToken");
-
-if(!sellerToken){
-alert("Login required");
-window.location = "index.html";
-}
-
 let seller = null;
-let sellerReady = false;
 
-const btn = document.getElementById("saveBtn");
-
-
-/* ================= LOAD SELLER ================= */
-async function loadSeller(){
-
-try{
-
-const res = await fetch(SELLER_API + "?action=getSellers");
-const data = await res.json();
-
-seller = data.find(s => s.token === sellerToken);
-
-if(!seller){
-alert("Session expired");
-localStorage.removeItem("sellerToken");
-window.location = "index.html";
-return;
+// Load seller info
+async function loadSeller() {
+  try {
+    const res = await fetch(SELLER_API + "?action=getSellers");
+    const data = await res.json();
+    seller = data.find(s => s.token === sellerToken);
+    if (!seller) {
+      alert("Seller not found. Please login again.");
+      localStorage.removeItem("sellerToken");
+      window.location = "index.html";
+    } else {
+      console.log("Seller loaded:", seller);
+    }
+  } catch (err) {
+    console.error("SELLER LOAD ERROR:", err);
+    alert("Seller API failed");
+  }
 }
-
-console.log("Seller:", seller);
-
-sellerReady = true;
-btn.disabled = false;
-
-}catch(err){
-console.log(err);
-alert("Seller API error");
-}
-
-}
-
 loadSeller();
 
+// Save product
+async function saveProduct() {
+  try {
+    const title = document.getElementById("title").value.trim();
+    const price = document.getElementById("price").value.trim();
+    const category = document.getElementById("category").value.trim();
+    const description = document.getElementById("description").value.trim();
+    const image = document.getElementById("imageUrl").value.trim();
 
-/* ================= SAVE PRODUCT ================= */
-async function saveProduct(){
+    if (!title || !price || !category || !description || !image) {
+      alert("Fill all fields");
+      return;
+    }
+    if (!seller) {
+      alert("Seller still loading, wait a moment and try again");
+      return;
+    }
 
-if(!sellerReady){
-alert("Seller loading...");
-return;
+    const product = {
+      action: "addProduct",
+      productId: "P_" + Date.now(),
+      sellerCode: seller.sellerCode,
+      shopName: seller.shopName,
+      title,
+      price,
+      category,
+      description,
+      image
+    };
+
+    const res = await fetch(PRODUCT_API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(product)
+    });
+
+    const text = await res.text();
+    console.log("RAW RESPONSE:", text);
+
+    let data;
+    try { data = JSON.parse(text); }
+    catch (e) { alert("Server returned invalid response"); return; }
+
+    if (data.success) {
+      alert("Product Saved Successfully");
+      window.location = "my-products.html";
+    } else {
+      alert("SAVE FAILED: " + (data.error || "Unknown error"));
+    }
+  } catch (err) {
+    console.error("SAVE ERROR:", err);
+    alert("Network error / deployment issue");
+  }
 }
-
-let title = document.getElementById("title").value;
-let price = document.getElementById("price").value;
-let category = document.getElementById("category").value;
-let description = document.getElementById("description").value;
-let image = document.getElementById("imageUrl").value;
-
-if(!title || !price || !category || !description || !image){
-alert("Fill all fields");
-return;
-}
-
-let product = {
-productId: "P_" + Date.now(),
-sellerCode: seller.sellerCode,
-shopName: seller.shopName,
-title,
-price,
-category,
-description,
-image
-};
-
-try{
-
-btn.disabled = true;
-btn.innerText = "Saving...";
-
-const res = await fetch(PRODUCT_API,{
-method:"POST",
-headers:{
-"Content-Type":"text/plain"
-},
-body: JSON.stringify(product)
-});
-
-const text = await res.text();
-console.log("RAW:", text);
-
-const data = JSON.parse(text);
-
-if(data.success){
-alert("Product Saved Successfully");
-window.location = "my-products.html";
-}else{
-alert(data.error || "Save failed");
-btn.disabled = false;
-btn.innerText = "Save Product";
-}
-
-}catch(err){
-console.log(err);
-alert("Network error");
-btn.disabled = false;
-btn.innerText = "Save Product";
-}
-
-}
-
 </script>
-
 </body>
 </html>
