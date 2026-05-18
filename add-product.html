@@ -3,18 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Add Product</title>
 
 <style>
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:Arial;
-}
-
 body{
+font-family:Arial;
 background:#f2f2f2;
 padding:20px;
 }
@@ -28,10 +21,7 @@ border-radius:10px;
 box-shadow:0 0 10px rgba(0,0,0,0.1);
 }
 
-h2{
-text-align:center;
-margin-bottom:15px;
-}
+h2{text-align:center;}
 
 input,textarea,select{
 width:100%;
@@ -49,15 +39,14 @@ background:#007bff;
 color:white;
 border:none;
 border-radius:6px;
-cursor:pointer;
 font-size:16px;
+cursor:pointer;
 }
 
-button:hover{
-background:#0056b3;
+button:disabled{
+background:gray;
 }
 </style>
-
 </head>
 
 <body>
@@ -83,58 +72,72 @@ background:#0056b3;
 
 <input id="imageUrl" placeholder="Image URL">
 
-<button onclick="saveProduct()">Save Product</button>
+<button id="saveBtn" onclick="saveProduct()" disabled>Save Product</button>
 
 </div>
 
 <script>
 
+/* ================= YOUR API ================= */
 const PRODUCT_API =
 "https://script.google.com/macros/s/AKfycbxShR62soMxOhS6nhnxCQMT8dAzUoSVQF2NN-5HoZsxgzDmr8Ty4_VnfI1yCrPwWYz2/exec";
 
 const SELLER_API =
 "https://script.google.com/macros/s/AKfycbwDYlOmBvYI3uw6Wqk7pNJdvxvLpJH0xe8JGY1XSRz1yd_e5GYuO5lGIBRJaU4mFChz/exec";
 
+
 const sellerToken = localStorage.getItem("sellerToken");
 
 if(!sellerToken){
+alert("Login required");
 window.location = "index.html";
 }
 
 let seller = null;
+let sellerReady = false;
 
-/* ===============================
-   FIX 1: WAIT FOR SELLER LOAD
-================================*/
+const btn = document.getElementById("saveBtn");
+
+
+/* ================= LOAD SELLER ================= */
 async function loadSeller(){
 
 try{
-let res = await fetch(SELLER_API + "?action=getSellers");
-let data = await res.json();
+
+const res = await fetch(SELLER_API + "?action=getSellers");
+const data = await res.json();
 
 seller = data.find(s => s.token === sellerToken);
 
 if(!seller){
-alert("Seller not found. Login again.");
+alert("Session expired");
 localStorage.removeItem("sellerToken");
 window.location = "index.html";
+return;
 }
 
+console.log("Seller:", seller);
+
+sellerReady = true;
+btn.disabled = false;
+
 }catch(err){
-console.log("SELLER LOAD ERROR:",err);
-alert("Seller API failed");
+console.log(err);
+alert("Seller API error");
 }
 
 }
 
 loadSeller();
 
-/* ===============================
-   FIX 2: SAFE SAVE FUNCTION
-================================*/
+
+/* ================= SAVE PRODUCT ================= */
 async function saveProduct(){
 
-try{
+if(!sellerReady){
+alert("Seller loading...");
+return;
+}
 
 let title = document.getElementById("title").value;
 let price = document.getElementById("price").value;
@@ -147,55 +150,49 @@ alert("Fill all fields");
 return;
 }
 
-if(!seller){
-alert("Seller still loading, wait 2 seconds and try again");
-return;
-}
-
 let product = {
-action:"addProduct",
-productId:"P_" + Date.now(),
-sellerCode:seller.sellerCode,
-shopName:seller.shopName,
-title:title,
-price:price,
-category:category,
-description:description,
-image:image
+productId: "P_" + Date.now(),
+sellerCode: seller.sellerCode,
+shopName: seller.shopName,
+title,
+price,
+category,
+description,
+image
 };
 
-/* ===============================
-   FIX 3: STRICT JSON CHECK
-================================*/
-let res = await fetch(PRODUCT_API,{
+try{
+
+btn.disabled = true;
+btn.innerText = "Saving...";
+
+const res = await fetch(PRODUCT_API,{
 method:"POST",
 headers:{
-"Content-Type":"application/json"
+"Content-Type":"text/plain"
 },
-body:JSON.stringify(product)
+body: JSON.stringify(product)
 });
 
-let text = await res.text();
-console.log("RAW RESPONSE:", text);
+const text = await res.text();
+console.log("RAW:", text);
 
-let data;
-try{
-data = JSON.parse(text);
-}catch(e){
-alert("Server returned invalid response");
-return;
-}
+const data = JSON.parse(text);
 
 if(data.success){
 alert("Product Saved Successfully");
-window.location="my-products.html";
+window.location = "my-products.html";
 }else{
-alert("SAVE FAILED: " + (data.error || "Unknown error"));
+alert(data.error || "Save failed");
+btn.disabled = false;
+btn.innerText = "Save Product";
 }
 
 }catch(err){
-console.log("SAVE ERROR:",err);
-alert("Network error / deployment issue");
+console.log(err);
+alert("Network error");
+btn.disabled = false;
+btn.innerText = "Save Product";
 }
 
 }
