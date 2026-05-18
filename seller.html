@@ -149,14 +149,8 @@ Loading...
 <div class="cards">
 
 <div class="card">
-
-<h3>Add Product</h3>
-
-<button onclick="window.location='https://script.google.com/macros/s/AKfycbzrFBGL_dqkZiyVnESGw3L-ZrYLYNQLR8aFYvZ2rHjQFPRrvCmIycn5Z0j-z2mnm3Rp/exec?sellerCode=' + currentSeller.sellerCode + '&shopName=' + encodeURIComponent(currentSeller.shopName)">
-  Open
-</button>
-
-
+  <h3>Add Product</h3>
+  <button id="addProductBtn" disabled>Open</button>
 </div>
 
 
@@ -231,7 +225,7 @@ const SELLER_API =
 "https://script.google.com/macros/s/AKfycbxUcxeGA-axA5URmEkg4smfyMjFbqbFQN8_lqRCuVZ_yOxn0rZdEg4LVURcEBMkCZUa/exec";
 
 const PRODUCT_API =
-"https://script.google.com/macros/s/AKfycbxShR62soMxOhS6nhnxCQMT8dAzUoSVQF2NN-5HoZsxgzDmr8Ty4_VnfI1yCrPwWYz2/exec";
+"https://script.google.com/macros/s/AKfycbzrFBGL_dqkZiyVnESGw3L-ZrYLYNQLR8aFYvZ2rHjQFPRrvCmIycn5Z0j-z2mnm3Rp/exec";
 
 const ORDER_API =
 "https://script.google.com/macros/s/AKfycbyBkmch4DePzglcOaeWpVHHQuOg_IdDxmgdPrem4AigI-pyot4fvv8xiLSwv169JMxb/exec";
@@ -259,63 +253,35 @@ window.location =
 // =====================================
 // LOAD SELLER
 // =====================================
-
-let currentSeller = null;
-
 async function loadSeller(){
+  const response = await fetch(SELLER_API + "?action=getSellers");
+  const sellers = await response.json();
 
-const response =
-await fetch(
-SELLER_API + "?action=getSellers"
-);
+  const seller = sellers.find(s => s.token === sellerToken);
 
-const sellers =
-await response.json();
+  if(!seller){
+    localStorage.removeItem("sellerToken");
+    window.location = "index.html";
+    return;
+  }
 
-const seller =
-sellers.find(s=>
+  currentSeller = seller;
 
-s.token === sellerToken
+  document.getElementById("shopName").innerText = "Welcome, " + seller.shopName;
+  document.getElementById("sellerCodeText").innerText = "Seller Code: " + seller.sellerCode;
 
-);
+  // ✅ Enable Add Product button only after seller is ready
+  const addBtn = document.getElementById("addProductBtn");
+  addBtn.disabled = false;
+  addBtn.onclick = () => {
+    window.location =
+      "https://script.google.com/macros/s/AKfycbzrFBGL_dqkZiyVnESGw3L-ZrYLYNQLR8aFYvZ2rHjQFPRrvCmIycn5Z0j-z2mnm3Rp/exec" +
+      "?sellerCode=" + currentSeller.sellerCode +
+      "&shopName=" + encodeURIComponent(currentSeller.shopName);
+  };
 
-if(!seller){
-
-localStorage.removeItem(
-"sellerToken"
-);
-
-window.location =
-"index.html";
-
-return;
-
+  loadStats();
 }
-
-currentSeller = seller;
-
-document
-.getElementById("shopName")
-.innerText =
-
-"Welcome, " +
-seller.shopName;
-
-document
-.getElementById(
-"sellerCodeText"
-)
-.innerText =
-
-"Seller Code: " +
-seller.sellerCode;
-
-
-
-loadStats();
-
-}
-
 
 
 // =====================================
