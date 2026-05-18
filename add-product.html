@@ -11,12 +11,15 @@
     h2{text-align:center;margin-bottom:15px;}
     input,textarea,select{width:100%;padding:10px;margin-top:10px;border:1px solid #ccc;border-radius:6px;}
     button{width:100%;padding:12px;margin-top:15px;background:#007bff;color:white;border:none;border-radius:6px;cursor:pointer;font-size:16px;}
-    button:hover{background:#0056b3;}
+    button:disabled{background:#999;cursor:not-allowed;}
+    button:hover:enabled{background:#0056b3;}
+    .seller-info{margin-top:15px;font-weight:bold;color:#007bff;text-align:center;}
   </style>
 </head>
 <body>
   <div class="box">
     <h2>Add Product</h2>
+    <div class="seller-info" id="sellerInfo">Loading seller...</div>
     <input id="title" placeholder="Product Title">
     <input id="price" type="number" placeholder="Price">
     <select id="category">
@@ -30,11 +33,11 @@
     </select>
     <textarea id="description" placeholder="Description"></textarea>
     <input id="imageUrl" placeholder="Image URL">
-    <button onclick="saveProduct()">Save Product</button>
+    <button id="saveBtn" onclick="saveProduct()" disabled>Save Product</button>
   </div>
 
 <script>
-const PRODUCT_API = "https://script.google.com/macros/s/AKfycbxShR62soMxOhS6nhnxCQMT8dAzUoSVQF2NN-5HoZsxgzDmr8Ty4_VnfI1yCrPwWYz2/exec";
+const PRODUCT_API = "https://script.google.com/macros/s/AKfycbxpmA4Ds06_VwD5bijWMvuMFVCukfL5BL8ZQrDrnMjRpzsAE2OSe8k3iZduqEV9EUn2/exec";
 const SELLER_API = "https://script.google.com/macros/s/AKfycbxUcxeGA-axA5URmEkg4smfyMjFbqbFQN8_lqRCuVZ_yOxn0rZdEg4LVURcEBMkCZUa/exec";
 
 const sellerToken = localStorage.getItem("sellerToken");
@@ -51,7 +54,9 @@ async function loadSeller() {
       localStorage.removeItem("sellerToken");
       window.location = "index.html";
     } else {
-      console.log("Seller loaded:", seller);
+      document.getElementById("sellerInfo").innerText =
+        "Seller: " + seller.shopName + " (Code: " + seller.sellerCode + ")";
+      document.getElementById("saveBtn").disabled = false; // enable button
     }
   } catch (err) {
     console.error("SELLER LOAD ERROR:", err);
@@ -62,6 +67,10 @@ loadSeller();
 
 // Save product
 async function saveProduct() {
+  if (!seller) {
+    alert("Wait until seller code loads before saving.");
+    return;
+  }
   try {
     const title = document.getElementById("title").value.trim();
     const price = document.getElementById("price").value.trim();
@@ -71,10 +80,6 @@ async function saveProduct() {
 
     if (!title || !price || !category || !description || !image) {
       alert("Fill all fields");
-      return;
-    }
-    if (!seller) {
-      alert("Seller still loading, wait a moment and try again");
       return;
     }
 
