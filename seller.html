@@ -150,9 +150,11 @@ Loading...
 
 <div class="card">
   <h3>Add Product</h3>
-  <button id="addProductBtn" disabled>Open</button>
+  <button onclick="window.location='https://script.google.com/macros/s/AKfycbzrFBGL_dqkZiyVnESGw3L-ZrYLYNQLR8aFYvZ2rHjQFPRrvCmIycn5Z0j-z2mnm3Rp/exec?sellerCode=' 
+    + currentSeller.sellerCode + '&shopName=' + encodeURIComponent(currentSeller.shopName)">
+    Open
+  </button>
 </div>
-
 
 
 <div class="card">
@@ -231,7 +233,9 @@ const ORDER_API =
 "https://script.google.com/macros/s/AKfycbyBkmch4DePzglcOaeWpVHHQuOg_IdDxmgdPrem4AigI-pyot4fvv8xiLSwv169JMxb/exec";
 
 
-
+const urlParams = new URLSearchParams(window.location.search);
+const sellerCode = urlParams.get("sellerCode");
+const shopName = decodeURIComponent(urlParams.get("shopName") || "");
 // =====================================
 // CHECK LOGIN
 // =====================================
